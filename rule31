@@ -1,0 +1,54 @@
+// *****************************************************
+// *** REGLE 31 : Les éléments textuels doivent avoir un contraste de couleur suffisant.
+// le fonction vérifie que tous les textes visibles respectent les normes de contraste définies par la WCAG.
+// 1.Filtrer les éléments visibles et pertinents sur la page.
+// 2.Identifier les éléments contenant du texte ou des graphiques.
+// 3.Analyser le contraste entre la couleur de texte (ou graphique) et l'arrière-plan. Signaler les éléments non conformes en enregistrant une erreur (Esd1AddError).
+// *****************************************************
+function Esd1Rule31() {
+    // Vérifie si la règle doit être ignorée (cas spécifique selon la configuration de l'environnement)
+    if (Esd1IgnoreRule(ESD1_MESSAGES.Rules.ESD1_ERROR_31)) {
+        return; // Si ignorée, arrêter l'exécution
+    }
+
+    // Initialisation de TestPageData pour récupérer tous les éléments visibles pertinents
+    const TestPageData = {
+        allVisibleElements: $(":visible").filter(":shown,canvas *")
+    };
+
+	//Elements that are disabled or have aria-disabled="true" do not need to be tested
+	$(TestPageData.allVisibleElements).filter("*:not(option)").each(function(){
+
+		if($(this).is("img[src],input:image[src],svg,canvas")){
+			imgCount++;
+		}
+        else {
+            // Vérifie si l'élément contient directement du texte
+            if (hasTextExcludingChildren(this)) {
+                // Vérifie si l'élément n'est pas caché
+                if (!hasAdditionalHidingTechniques(this)) {
+                    elementsContainingTextCount++; // Incrémente le compteur de textes
+
+                    var contrastData = getContrastData(this); // Récupère les données de contraste
+
+                    // Si l'élément n'est pas désactivé, teste le contraste
+                    if (!contrastData.disabled) {
+                        //Throw Alerts if Necessary:
+                        if(contrastData.result === "FAIL"){
+                            //Text does not meet minimum contrast ratio
+                            var minReq = contrastData.minReq;
+                            if(minReq === wcagLevel.largeTextReqRatio)
+                                Esd1AddError($(this),ESD1_MESSAGES.Rules.ESD1_ERROR_31);
+
+                        }
+
+                    }
+
+                } else {
+                    // Incrémente le compteur d'éléments cachés
+                    disabledElementsCount++;
+                }
+            }
+        }
+    });
+}
